@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Door - OTP Verification</title>
+    <style>
+        /* Center the form on the page */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f8ff; /* Light blue background */
+            color: #333;
+        }
+
+        /* Form container */
+        .form-container {
+            width: 450px; /* Reduced width */
+            padding: 30px;
+            background-color: #ffffff; /* White background */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            border-radius: 12px; /* Rounded corners */
+            text-align: center;
+        }
+
+        /* Heading styling */
+        h2 {
+            font-size: 22px;
+            color: #4A90E2; /* Light blue for title */
+        }
+
+        /* Input styling */
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 12px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #555;
+            background-color: #f9f9f9; /* Light grey background for inputs */
+        }
+
+        /* Change input border color on focus */
+        input[type="text"]:focus {
+            border-color: #4A90E2; /* Blue border on focus */
+            outline: none;
+        }
+
+        /* Button styling */
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4A90E2; /* Light blue button */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Change button color on hover */
+        button:hover {
+            background-color: #357ABD; /* Darker blue on hover */
+        }
+
+        /* Message styling */
+        .message, .timer {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        /* Timer text color */
+        .timer {
+            font-weight: bold;
+            color: #cd0823; /* Light coral color for timer */
+        }
+
+        /* Success message styling */
+        .message.success {
+            color: #40cc33; /* Green color for success */
+        }
+
+        /* Error message styling */
+        .message.error {
+            color: #D32F2F; /* Red color for errors */
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Enter Access OTP </h2>
+        <form id="otpForm">
+            <label for="otp">ACCESS OTP:</label>
+            <input type="text" id="otp" name="otp" required>
+            <button type="submit">Verify Access OTP</button>
+        </form>
+        <div id="message" class="message"></div>
+        <div id="timer" class="timer">Time left: 5:00</div>
+    </div>
+
+    <script>
+        let remainingTime = 300; // Default to 5 minutes (300 seconds)
+
+        // Countdown timer function
+        function startCountdown(duration) {
+            const timerDisplay = document.getElementById("timer");
+            let minutes, seconds;
+
+            const countdown = setInterval(() => {
+                minutes = Math.floor(duration / 60);
+                seconds = duration % 60;
+
+                timerDisplay.textContent = `Time left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+                if (--duration < 0) {
+                    clearInterval(countdown);
+                    timerDisplay.textContent = "Access OTP has expired.";
+                }
+            }, 1000);
+        }
+
+        // Initialize timer when the page loads
+        startCountdown(remainingTime);
+
+        document.getElementById("otpForm").onsubmit = async function(event) {
+            event.preventDefault();
+            const otp = document.getElementById("otp").value;
+
+            try {
+                const response = await fetch('https://cq6kbk2ark.execute-api.us-east-1.amazonaws.com/owner-smartdoor-stage/owner-gateway', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ otp })
+                });
+
+                // Parse the response JSON
+                const result = await response.json();
+                const messageDiv = document.getElementById("message");
+
+                // Check if the response contains a valid status
+                if (result.body && result.body.valid) {
+                    remainingTime = result.body.remainingTime;  // Update remaining time based on server response
+                    startCountdown(remainingTime);  // Restart the timer with the correct remaining time
+                    messageDiv.innerText = `Welcome, ${result.body.name}! Access granted.`;
+                    messageDiv.className = "message success"; // Apply success style
+                } else {
+                    messageDiv.innerText = "Permission denied: Invalid or expired OTP.";
+                    messageDiv.className = "message error"; // Apply error style
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById("message").innerText = "An error occurred. Please try again.";
+            }
+        }
+    </script>
+</body>
+</html>

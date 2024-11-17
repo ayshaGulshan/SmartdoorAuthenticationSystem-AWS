@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitor Approval</title>
+    <style>
+        /* Global font and background styling */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(to right, #a8c0ff, #3f87a6); /* Gradient background */
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+        }
+
+        /* Form container */
+        .form-container {
+            width: 100%;
+            max-width: 450px;
+            padding: 30px;
+            background-color: #fff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        /* Image styling */
+        .form-image {
+            width: 100%;
+            max-width: 250px;
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        /* Heading styling */
+        h2 {
+            font-size: 24px;
+            color: #3f87a6;
+            margin-bottom: 20px;
+        }
+
+        /* Input styling */
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 12px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #555;
+            background-color: #fafafa; /* Light grey background */
+            transition: border-color 0.3s ease;
+        }
+
+        /* Change input border color on focus */
+        input[type="text"]:focus {
+            border-color: #3f87a6; /* Blue border on focus */
+            outline: none;
+        }
+
+        /* Button styling */
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #3f87a6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Button hover effect */
+        button:hover {
+            background-color: #2d6a76;
+        }
+
+        /* Error and success message styling */
+        .message {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        /* Responsive styles for smaller screens */
+        @media (max-width: 500px) {
+            .form-container {
+                width: 90%;
+                padding: 20px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            button {
+                font-size: 16px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="form-container">
+        <!-- Image container with dynamic source -->
+        <img src="" alt="Visitor Photo" class="form-image" id="visitorImage">
+        
+        <h2>Visitor Access Approval</h2>
+        <form id="approvalForm">
+            <label for="visitorName">Visitor Name:</label>
+            <input type="text" id="visitorName" name="visitorName" required>
+            <label for="email">Email:</label>
+            <input type="text" id="email" name="email" required>
+            <button type="submit">Approve the Visitor</button>
+        </form>
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        // Extract URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const imageUrl = urlParams.get('imageUrl');  // S3 image URL
+        const faceId = urlParams.get('faceId');  // Face ID parameter
+
+        // Set the image source if `imageUrl` is available
+        if (imageUrl) {
+            document.getElementById('visitorImage').src = imageUrl;
+        } else {
+            document.getElementById('visitorImage').alt = 'No image available';
+        }
+
+        // Handle form submission
+        document.getElementById("approvalForm").onsubmit = async function(event) {
+            event.preventDefault();
+            const name = document.getElementById("visitorName").value;
+            const email = document.getElementById("email").value;
+            
+            try {
+                const response = await fetch('https://veir0gky5a.execute-api.us-east-1.amazonaws.com/smartdoorstage/smartdoorgateway', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ faceId, name, email })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('message').innerText = 'Visitor approved and OTP generated';
+                    document.getElementById('message').style.color = '#388E3C'; // Green color for success
+                } else {
+                    document.getElementById('message').innerText = 'Error in approval process';
+                    document.getElementById('message').style.color = '#D32F2F'; // Red color for error
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('message').innerText = 'An error occurred. Please try again.';
+                document.getElementById('message').style.color = '#D32F2F'; // Red color for error
+            }
+        }
+    </script>
+</body>
+</html>
